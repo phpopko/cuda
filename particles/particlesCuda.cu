@@ -3,6 +3,7 @@
 #include <vector>
 #include <random>
 #include <algorithm>
+#include <curand_kernel.h>
 
 #include "particle.h"
 #include "timer.h"
@@ -17,11 +18,26 @@ constexpr int HEIGHT = 600;
 __global__ void updateParticlesCuda(Particle* particles)
 {
 	int i = blockDim.x*blockIdx.x + threadIdx.x;
-	if (i < PARTICLE_COUNT) { particles[i].update(); }
+	if (i < PARTICLE_COUNT) { particles[i].updateCuda(); }
 }
 
 
-//Need cuda init
+__global__ void initParticlesCuda(Particle* particles, int vL, int vH, unsigned long seed)
+{	
+	int i = blockDim.x*blockIdx.x + threadIdx.x;
+	if (i >= PARTICLE_COUNT) { return; }
+
+	curandState state;
+	curand_init(seed, i, 0, &state);
+
+	int px = curand(&state) % WIDTH;
+    int py = curand(&state) % HEIGHT;
+    int range = vH - vL + 1;
+    int vx = (curand(&state) % range) + vL;
+    int vy = (curand(&state) % range) + vL;
+
+    particles[i] = Particle(px, py, vx, vy);
+}
 
 void outputSample(vector<Particle>& v, int upto)
 {
@@ -33,34 +49,17 @@ void outputSample(vector<Particle>& v, int upto)
 int main()
 {
 	mt19937 rng(random_device{}());
+	unsigned long seed = rng();
 
 	vector<Particle> particles(PARTICLE_COUNT);
-	initParticles(particles, -5, 5, rng);
 
-	
 	Particle* d_particles;
 	cudaMalloc(&d_particles, PARTICLE_COUNT*sizeof(Particle));
-	cudaMemcpy(d_particles, particles.data(), PARTICLE_COUNT*sizeof(Particle), cudaMemcpyHostToDevice);
 
 	int threadsPerBlock = min(PARTICLE_COUNT, 256);
 	int blocks = (PARTICLE_COUNT+ threadsPerBlock - 1) / threadsPerBlock;
-
-
-	cout << "UPDATING POSITION OF PARTICLES\n";
-	cout << "PARTICLE COUNT: " << PARTICLE_COUNT << '\n';
-	cout << "\nCUDA BENCHMARK:\n";
-	{
-		Timer timer;
-		updateParticlesCuda<<<blocks, threadsPerBlock>>>(d_particles);
-		cudaDeviceSynchronize();
-	}	
-
-
-
-
-	cudaMemcpy(particles.data(), d_particles, PARTICLE_COUNT*sizeof(Particle), cudaMemcpyDeviceToHost);
-
-
+	initParticlesCuda<<<blocks, threadsPerBlock>>>(d_particles, -5, 5, seed);
+	cudaDeviceSynchronize();
 
 	cudaFree(d_particles);
 	return 0;
