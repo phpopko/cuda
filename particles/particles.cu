@@ -1,16 +1,15 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <chrono>
 #include <iostream>
 #include <vector>
 #include <random>
 #include <algorithm>
 
 #include "particle.h"
+#include "timer.h"
 
 using namespace std;
 
-constexpr int PARTICLE_COUNT = 10000;
+constexpr int PARTICLE_COUNT = 10000000;
 constexpr int WIDTH = 800;
 constexpr int HEIGHT = 600;
 
@@ -46,9 +45,9 @@ int main()
 	vector<Particle> particles(PARTICLE_COUNT);
 	initParticles(particles, -5, 5, rng);
 
-	outputSample(particles, 3);
+	Timer timer;
 	updateParticlesArray(particles);
-	outputSample(particles, 3);
+	timer.Stop();
 
 	return 0;
 }
