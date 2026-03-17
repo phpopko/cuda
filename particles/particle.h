@@ -14,7 +14,12 @@ public:
     int getVx() const { return vx; }
     int getVy() const { return vy; }
 
-    __host__ __device__ void update() {
+    __host__ __device__ void updateCuda() {
+        px += vx;
+        py += vy;
+    }
+
+    void updateCpu() {
         px += vx;
         py += vy;
     }
