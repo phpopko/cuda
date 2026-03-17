@@ -9,13 +9,19 @@
 
 using namespace std;
 
-constexpr int PARTICLE_COUNT = 10000000;
+constexpr int PARTICLE_COUNT = 1000000;
 constexpr int WIDTH = 800;
 constexpr int HEIGHT = 600;
 
 void updateParticlesArray(vector<Particle>& particles)
 {
 	for (int i = 0; i < PARTICLE_COUNT; i++) { particles[i].update(); }
+}
+
+__global__ void updateParticlesCuda(Particle* particles)
+{
+	int i = blockDim.x*blockIdx.x + threadIdx.x;
+	if (i < PARTICLE_COUNT) { particles[i].update(); }
 }
 
 
@@ -45,9 +51,36 @@ int main()
 	vector<Particle> particles(PARTICLE_COUNT);
 	initParticles(particles, -5, 5, rng);
 
-	Timer timer;
-	updateParticlesArray(particles);
-	timer.Stop();
+	
+	Particle* d_particles;
+	cudaMalloc(&d_particles, PARTICLE_COUNT*sizeof(Particle));
+	cudaMemcpy(d_particles, particles.data(), PARTICLE_COUNT*sizeof(Particle), cudaMemcpyHostToDevice);
 
+	int threadsPerBlock = min(PARTICLE_COUNT, 256);
+	int blocks = (PARTICLE_COUNT+ threadsPerBlock - 1) / threadsPerBlock;
+
+
+	cout << "UPDATING POSITION OF PARTICLES\n";
+	cout << "PARTICLE COUNT: " << PARTICLE_COUNT << '\n';
+	cout << "CPU BENCHMARK:\n";
+	{
+		Timer timer;
+		updateParticlesArray(particles);
+	}	
+	cout << "\nCUDA BENCHMARK:\n";
+	{
+		Timer timer;
+		updateParticlesCuda<<<blocks, threadsPerBlock>>>(d_particles);
+		cudaDeviceSynchronize();
+	}	
+
+
+
+
+	cudaMemcpy(particles.data(), d_particles, PARTICLE_COUNT*sizeof(Particle), cudaMemcpyDeviceToHost);
+
+
+
+	cudaFree(d_particles);
 	return 0;
 }
