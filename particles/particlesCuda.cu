@@ -10,7 +10,7 @@
 
 using namespace std;
 
-constexpr int PARTICLE_COUNT = 1000000;
+constexpr int PARTICLE_COUNT = 100000000;
 constexpr int WIDTH = 800;
 constexpr int HEIGHT = 600;
 
@@ -58,9 +58,18 @@ int main()
 
 	int threadsPerBlock = min(PARTICLE_COUNT, 256);
 	int blocks = (PARTICLE_COUNT+ threadsPerBlock - 1) / threadsPerBlock;
-	initParticlesCuda<<<blocks, threadsPerBlock>>>(d_particles, -5, 5, seed);
-	cudaDeviceSynchronize();
 
+	{
+		Timer timer;
+		initParticlesCuda<<<blocks, threadsPerBlock>>>(d_particles, -5, 5, seed);
+		cudaDeviceSynchronize();
+	}	
+
+	{
+		Timer timer;
+		updateParticlesCuda<<<blocks, threadsPerBlock>>>(d_particles);
+		cudaDeviceSynchronize();
+	}
 	cudaFree(d_particles);
 	return 0;
 }
