@@ -1,29 +1,21 @@
-#include <stdio.h>
 #include <iostream>
-#include <vector>
 #include <random>
-#include <algorithm>
-
+#include <vector>
 #include "particle.h"
 #include "timer.h"
+#include "particlesCpu.h"
 
-using namespace std;
-
-constexpr int PARTICLE_COUNT = 100000000;
-constexpr int WIDTH = 800;
-constexpr int HEIGHT = 600;
-
-void updateParticlesVector(vector<Particle>& particles)
+void updateParticlesVector(std::vector<Particle>& particles, int PARTICLE_COUNT)
 {
-	for (int i = 0; i < PARTICLE_COUNT; i++) { particles[i].updateCpu(); }
+	for (int i = 0; i < PARTICLE_COUNT; i++) { particles[i].update(); }
 }
 
 
-void initParticles(vector<Particle>& particles, int vL, int vH, mt19937& rng)
+void initParticles(std::vector<Particle>& particles, int PARTICLE_COUNT, int max_width, int max_height, int vL, int vH, std::mt19937& rng)
 {
-	uniform_int_distribution<int> randPx(0, WIDTH);
-    uniform_int_distribution<int> randPy(0, HEIGHT);
-    uniform_int_distribution<int> randV(vL, vH);
+	std::uniform_int_distribution<int> randPx(0, max_width);
+    std::uniform_int_distribution<int> randPy(0, max_height);
+    std::uniform_int_distribution<int> randV(vL, vH);
 
 	for (int i = 0; i < PARTICLE_COUNT; i++) {
 	    Particle p(randPx(rng), randPy(rng), randV(rng), randV(rng));
@@ -31,28 +23,24 @@ void initParticles(vector<Particle>& particles, int vL, int vH, mt19937& rng)
 	}
 }
 
-void outputSample(vector<Particle>& v, int upto)
+
+
+void runCpuTest(int PARTICLE_COUNT, int width, int height)
 {
-	int lim = min(PARTICLE_COUNT, upto);
+	std::mt19937 rng(std::random_device{}());
 
-	for (int i = 0; i < lim; i++) { printf("Particle %d (px=%d, py=%d, vx=%d, vy=%d)\n", i+1, v[i].getPx(), v[i].getPy(), v[i].getVx(), v[i].getVy()); }
-}
+	std::vector<Particle> particles(PARTICLE_COUNT);
 
-int main()
-{
-	mt19937 rng(random_device{}());
-
-	vector<Particle> particles(PARTICLE_COUNT);
-
+	std::cout << "Initializing particles...\n";
 	{
 		Timer timer;
-		initParticles(particles, -5, 5, rng);
+		initParticles(particles, PARTICLE_COUNT, width, height, -5, 5, rng);
 	}	
 
+	std::cout << "Updating particles...\n";
 	{
 		Timer timer;
-		updateParticlesVector(particles);
+		updateParticlesVector(particles, PARTICLE_COUNT);
 	}
 
-	return 0;
 }
