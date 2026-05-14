@@ -3,9 +3,9 @@
 #include <time.h>
 
 #define NUM_PARTICLES 65536
-#define NUM_STEPS     100
-#define DT            0.016f
-#define GRAVITY       -9.81f
+#define NUM_STEPS 100
+#define DT 0.016f
+#define GRAVITY -9.81f
 
 typedef struct {
     float x, y, z;
@@ -51,13 +51,13 @@ int main(void) {
     printf("CPU time      : %.4f seconds\n", elapsed);
     printf("Particles/sec : %.0f\n", (NUM_PARTICLES * NUM_STEPS) / elapsed);
 
-    printf("\n--- Sample particles ---\n");
+    printf("\n Sample particles \n");
     for (int i = 0; i < 5; i++) {
         printf("  p[%d] pos=(%8.2f, %8.2f, %8.2f) vel=(%8.2f, %8.2f, %8.2f)\n",
                i, particles[i].x, particles[i].y, particles[i].z,
                particles[i].vx, particles[i].vy, particles[i].vz);
     }
-    printf("  ...\n");
+    printf("\n");
 
     free(particles);
     return 0;
